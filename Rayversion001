@@ -1,0 +1,66 @@
+import numpy as np
+import itertools
+n=5
+l=8
+k=2
+A=np.matrix([[0.81286,0.25123,0,0.54893,1,0.77105,0,0.64741],
+            [0,0.58108,0,0.90309,0,0.27081,0.51569,0.91733],
+            [0,0.32049,0.64850,0.74559,0,0.65833,0,0.60562],
+            [0.62968,0.89444,0.91921,0.50869,0,0.60434,0,0.63874],
+            [0,0.79300,0.94740,0.99279,0,0.23595,0.57810,0.71511]])
+Mu = np.matrix([2,2,1,2,2,2,1,2])
+w = np.matrix([32,19,41,26,37,49,50,11])
+
+lst = list(map(list, itertools.product([0, 1], repeat=n)))
+suma=np.sum(lst,axis=1)
+indice=(suma==k)
+i1=np.where(indice)
+i2=np.array(i1)
+i3=i2.shape
+S=np.zeros((i3[1],l))
+J=np.zeros(i3[1])
+
+for i4 in range(0,i3[1]):
+   S[i4]=lst[i2[0,i4]]*A
+   J[i4]= np.inner(Mu,S[i4])
+   print(lst[i2[0,i4]])
+   print(J)
+JMAX=np.amax(J)
+nJ1=np.argmax(J,axis=0)
+nJMAX=nJ1
+yopt=lst[i2[0,nJMAX]]
+sumaOPT=float(np.sum(S[nJMAX],axis=0))
+print(JMAX)
+print(nJMAX)
+print(yopt)
+lst1 = list(map(list, itertools.product([0, 1], repeat=l)))
+L1=np.array(lst1)
+AUX2=np.array(S[nJMAX])
+AUX3=AUX2<1
+AUX4=np.where(AUX3)
+AUX5=np.array(AUX4)
+
+L2=L1[:,AUX5[0][:]]
+L3=(L2==0)
+L4=np.where(L3)
+L5=np.array(L4)
+it1=L5.shape
+iteraciones1=it1[1]
+J1=np.zeros(iteraciones1)
+z=np.zeros((iteraciones1,l))
+m=0
+i8=0
+for i8 in range(0,iteraciones1-1):
+    if all(L3[i8,:]):
+        z[m]=lst1[i8]
+        J1[i8]= np.inner(w,z[m])
+        m=m+1
+        print(J1[i8])
+        print(i8)
+JMAX1=np.amax(J1)
+nJ11=np.argmax(J1,axis=0)
+nJMAX1=nJ11
+zopt=lst1[nJMAX1]
+print(JMAX1)
+print(nJMAX1)
+print(zopt) 
