@@ -1,0 +1,117 @@
+import numpy as np
+import itertools
+np.set_printoptions(threshold=np.nan)
+
+A=np.array([[0.81286,0.25123,0,0.54893,1,0.77105,0,0.64741],[0,0.58108,0,0.90309,0,0.27081,0.51569,0.91733],[0,0.32049,0.64850,0.74559,0,0.65833,0,0.60562],[0.62968,0.89444,0.91921,0.50869,0,0.60434,0,0.63874],[0,0.79300,0.94740,0.99279,0,0.23595,0.57810,0.71511]])
+""" Vector de pesos """
+W = np.array([32,19,41,26,37,49,50,11])
+""" Generacion iterativa del vector de escalamiento Mu"""
+comb=list(itertools.product([0, 1], repeat=8)) # Crear matriz de combinaciones de 8 bits para Mu
+arreglo=np.array(comb)
+sol_var=np.zeros((256,21))
+sol_optim=np.zeros((256,1))
+for ii in range(0,256):
+    pMu = arreglo[ii,:]       # Extraer el renglon correspondiente al indice i
+    Mu = np.sum([pMu, [1,1,1,1,1,1,1,1]], axis=0) # Sumar vector de 1s para aumenrar rango entre 1 y 2
+    S=np.inner(Mu,A)
+    # D son los coeficientes del lado izquierdo de la restriccion
+    [n,m]=A.shape # Devuelve n=5 X m=8
+    D=np.ones(n)
+    # Es la restricción o lado derecho de la funcion objetivo
+    k = 2              
+    tam = 2**(n)
+    elementos = tam-1 # numero de combinaciones con n bits
+    salida = np.zeros((elementos,n))
+    for numero in range(0,elementos+1):
+        d = np.array(numero)
+        power = 2**np.arange(n)
+        d = d * np.ones((1,n))
+        b = np.floor((d%(2*power))/power)
+        #salida[0,]=b
+        salida[numero-1,]=b  # matriz con los elementos en binario
+    Z=salida  
+
+    #% Se realiza la multiplicación para comprobar la restricción 
+    #% con cada combinacion 
+    X = np.dot(Z,S)
+    # En Indice se guarda la combinacion (vector z) que cumple la restriccion
+    Indice = np.zeros((elementos))
+    for i in range(0,elementos):
+        if (np.dot(Z[i,:],D) == k):
+            Indice[i] = 1
+    # Discriminar de vector de funcion objetivo X la combinacion que cumple la
+    # restriccion  
+    XM =X.transpose()*Indice
+    XM=XM.transpose()               
+    fOptim = XM.max()
+    for j in range(0,elementos):
+        if (XM[j]==fOptim):
+            sol = Z[j,:]
+    #print(sol)
+    #print(fOptim)
+    D2 = np.inner(A.transpose(),sol)
+    """
+    D2 es el producto de A por sol (y), para la parte siguiente del programa que resuelve ec (3)
+    La combinacion solucion es sol (revisar el orden de los elementos, parece que
+    es un orden inverso) que corresponde al vector solucion y de la optimizacion de la ec. (2)
+    El valor optimo de la funcion es fOptim         
+    """ 
+
+    """ INSERCION DE CODIGO PARA RESOLVER EC (3) 
+    30/mayo/2018 """
+
+    [nn,] = D2.shape;           
+    tam = 2**(nn)
+
+    elementos = tam-1 # numero de combinaciones
+    salida = np.zeros((elementos,nn))
+
+    for numero in range(0,elementos+1):
+        #numero= # numero decimal 
+        d = np.array(numero)
+        power = 2**np.arange(nn)
+        d = d * np.ones((1,nn))
+        b = np.floor((d%(2*power))/power)
+        #salida[0,]=b
+        salida[numero-1,]=b  # matriz con los elementos en binario
+    Z=salida  
+
+    #% Se realiza la multiplicación para comprobar la restricción 
+    #% con cada combinacion 
+    X = np.inner(W,Z)
+    # En Indice se guarda la combinacion (vector z) que cumple la restriccion
+    Indice = np.zeros((elementos))
+    for i in range(0,elementos):
+        if ((Z[i,0] <= D2[0]) and (Z[i,1] <= D2[1]) and (Z[i,2] <= D2[2]) and (Z[i,3] <= D2[3]) and (Z[i,4] <= D2[4]) and (Z[i,5] <= D2[5]) and (Z[i,6] <= D2[6]) and (Z[i,7] <= D2[7])):
+            Indice[i] = 1
+    # Discriminar de vector de funcion objetivo X la combinacion que cumple la
+    # restriccion  
+    XM =X*Indice
+    fOptimE3 = max(XM)
+    for j in range(0,elementos):
+        if (XM[j]==fOptimE3):
+            solE3 = Z[j]
+    #print(solE3)
+    #print(fOptimE3)
+    sol_var[ii,:] = np.hstack([Mu,sol,solE3]) # concatenar Mu, X optimo y z optimo
+    sol_optim[ii] = fOptimE3
+# Fin de ciclo for de iteracion de factor de escalamiento Mu
+
+sol_optim_max=max(sol_optim)    # Valor de la solucion optima
+combinacion = np.nonzero(sol_optim==sol_optim_max)  # ubicacion de la sol optima
+#print(sol_optim_max)
+print(sol_optim)
+print(combinacion)
+combin=combinacion[0]    # Extraccion de vector de indices de sol optima
+num_combin=combin.size
+soluciones=np.zeros((num_combin,23)) # Creacion de vector para almacenar sol optima
+for jj in range(0,num_combin):
+    soluciones[jj,:] = np.hstack([sol_var[combin[jj]],sol_optim[combin[jj]],combin[jj]])
+# fin de ciclo de extraccion de soluciones
+print (soluciones) 
+"""
+Las combinaciones que son soluciones optimas estan en la matriz soluciones 
+Formado asi:
+[ Mu (8 elementos), X (5 elementos), Z (8elementos), FOptim (1 elem), num_combin (1 elem) ]              
+
+"""
